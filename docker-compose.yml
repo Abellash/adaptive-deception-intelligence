@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: pikatrap
+      POSTGRES_USER: pikatrap
+      POSTGRES_PASSWORD: pikatrap
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pikatrap -d pikatrap"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://pikatrap:pikatrap@postgres:5432/pikatrap
+      REDIS_URL: redis://redis:6379/0
+      BACKEND_CORS_ORIGINS: http://localhost:5173
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+  novapay-lab:
+    build: ./lab/novapay-target
+    depends_on:
+      - backend
+    ports:
+      - "8081:80"
+
+volumes:
+  postgres_data:
+  redis_data:
