@@ -1,4 +1,5 @@
-const API = "http://localhost:8000/api/v1/telemetry";
+const API_BASE = "__PIKATRAP_API_URL__";
+const API = `${API_BASE}/api/v1/telemetry`;
 const sessionKey = "pikatrap-lab-session";
 const requestedSession = new URLSearchParams(location.search).get("session_id");
 const sessionId = requestedSession || localStorage.getItem(sessionKey) || `novapay-lab-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -6,7 +7,7 @@ localStorage.setItem(sessionKey, sessionId);
 
 async function checkContainment() {
   try {
-    const response = await fetch(`http://localhost:8000/api/v1/sessions/${encodeURIComponent(sessionId)}/containment`);
+    const response = await fetch(`${API_BASE}/api/v1/sessions/${encodeURIComponent(sessionId)}/containment`);
     if (!response.ok) return;
     const state = await response.json();
     if (state.contained) quarantine(state.containment_action);
