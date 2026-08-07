@@ -5,6 +5,7 @@ import "./style.css";
 type Event = { event_id: string; timestamp: string; session_id: string; action: string; risk_delta: number; risk_score: number; severity: string; intent: string; intent_confidence: number; intent_probabilities: Record<string, number>; behavior: string; threat_percent: number; next_paths: { path: string; probability: number }[]; session_status: string; containment_action: string | null; mitre_technique: string; orchestrator_action: string; details: Record<string, unknown> };
 type Incident = { id: string; session_id: string; severity: string; status: string; summary: string; containment_action: string; created_at: string };
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const LAB_URL = import.meta.env.VITE_LAB_URL || "http://localhost:8081";
 const title = (value: string) => value.replaceAll("_", " ");
 const eventLabels: Record<string, string> = {
   directory_scan: "Portal discovery", file_enumeration: "Workspace enumeration", decoy_file_access: "Decoy file access",
@@ -80,7 +81,7 @@ function App() {
   }, [activeSession]);
   const latest = activeSession ? events.find(event => event.session_id === activeSession) : undefined;
   const reportReady = latest?.orchestrator_action === "RECOMMEND_CONTAINMENT";
-  const labUrl = `http://localhost:8081/?session_id=${encodeURIComponent(activeSession || "")}`;
+  const labUrl = `${LAB_URL}/?session_id=${encodeURIComponent(activeSession || "")}`;
   const downloadReport = async (sessionId = latest?.session_id) => {
     if (!sessionId) return;
     setReportMessage("Preparing incident report...");
