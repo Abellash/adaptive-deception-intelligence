@@ -1,6 +1,15 @@
 # PikaTrap
 
-Adaptive deception. Intelligent defense. PikaTrap is a safe, local-first hackathon prototype for Team Pikachu. It correlates interactions with linked deceptive assets into an Adaptive Deception Graph (ADG), applies deterministic MITRE ATT&CK mappings and risk scoring, then broadcasts a policy-gated orchestration recommendation.
+Adaptive deception. Intelligent defense. PikaTrap is a safe, local-first hackathon prototype for Team Pikachu. It uses intelligent honeytokens, adaptive deception, attacker behavior analysis, threat intelligence, and automated containment.
+
+## Hackathon project
+
+Built for the **Autonomous Deception Intelligence Platform Using Honeytokens & Active Defense** challenge.
+
+### Team
+
+- Abellash
+- Antony
 
 ## Working vertical slice
 
@@ -15,9 +24,9 @@ copy .env.example .env
 docker compose up --build
 ```
 
-Open `http://localhost:5173`, then choose **Trigger .env.production canary**. API health is at `http://localhost:8000/health`.
+Open `http://localhost:5173`, then choose **Open NovaPay target lab**. API health is at `http://localhost:8000/health`.
 
-For the richer safe demo, open `http://localhost:8081`. Choose Engineering (fake `.env.production` → fake cloud console → storage bucket → fictional customer export), Finance (forecast/payroll decoys), or Source Control (fake deployment key → local authentication decoy). Each local interaction sends a different standardized telemetry event to PikaTrap. This is defender-owned simulation only; it does not interact with external websites.
+For the richer safe demo, use the linked NovaPay lab. Choose Engineering (fake `.env.production` -> fake cloud console -> storage bucket -> fictional customer export), Finance (forecast/payroll decoys), or Source Control (fake deployment key -> local authentication decoy). Each local interaction sends a different standardized telemetry event to PikaTrap. This is defender-owned simulation only; it does not interact with external websites.
 
 ## Run backend locally
 
@@ -38,9 +47,11 @@ python deception/scripts/trigger_env_canary.py
 ## Endpoints
 
 - `GET /health`
-- `POST /api/v1/telemetry` — standardized event ingestion
-- `POST /api/v1/demo/trigger` — safe first-honeytoken demo
+- `POST /api/v1/telemetry` - standardized event ingestion
+- `POST /api/v1/demo/trigger` - safe first-honeytoken demo
 - `GET /api/v1/events`
+- `GET /api/v1/incidents`
+- `GET /api/v1/reports/{session_id}.html`
 - `WS /ws/events`
 
 See [architecture](docs/architecture.md), [API notes](docs/api.md), and the [repeatable demo](docs/demo-scenario.md).
