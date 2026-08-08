@@ -91,3 +91,15 @@ class DecoyFeedback(Base):
     first_interaction_step: Mapped[int | None] = mapped_column(Integer, nullable=True)
     progression_event_count: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class AnalystDecision(Base):
+    """Auditable human-in-the-loop decision inside the defender-owned lab."""
+    __tablename__ = "analyst_decisions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    session_id: Mapped[str] = mapped_column(ForeignKey("attacker_sessions.id"))
+    analyst: Mapped[str] = mapped_column(String(120), default="SOC Analyst")
+    action: Mapped[str] = mapped_column(String(40))
+    note: Mapped[str] = mapped_column(Text, default="")
+    recommendation: Mapped[str] = mapped_column(String(80), default="OBSERVE")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)

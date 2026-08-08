@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -52,3 +52,9 @@ class HoneytokenCreate(BaseModel):
     token_type: str
     environment: str = "NovaPay lab"
     risk_weight: int = Field(default=20, ge=1, le=100)
+
+
+class AnalystActionIn(BaseModel):
+    action: Literal["APPROVE", "REJECT", "OVERRIDE", "QUARANTINE"]
+    note: str = Field(default="", max_length=500)
+    analyst: str = Field(default="SOC Analyst", min_length=2, max_length=120)

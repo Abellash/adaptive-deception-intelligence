@@ -9,8 +9,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db
-from .models import Asset, AttackerSession, BehaviorMemory, Honeytoken, Incident, SecurityEvent
-from .schemas import DemoTrigger, EventOut, HoneytokenCreate, TelemetryEventIn
+from .models import AnalystDecision, Asset, AttackerSession, BehaviorMemory, Honeytoken, Incident, SecurityEvent
+from .schemas import AnalystActionIn, DemoTrigger, EventOut, HoneytokenCreate, TelemetryEventIn
 from .services.honeytokens import TOKEN_REFERENCE, write_first_honeytoken
 from .services.intent import behavior_label, infer_intent, infer_intent_probabilities, next_path_probabilities
 from .services.agentic_orchestrator import apply_safety_gate, recommend
@@ -161,6 +161,39 @@ def list_incidents(db: Session = Depends(get_db)):
 def deception_effectiveness(db: Session = Depends(get_db)):
     """Aggregate explainable feedback from completed defender-owned lab sessions."""
     return effectiveness_snapshot(db)
+
+
+@app.post("/api/v1/sessions/{session_id}/analyst-action")
+def analyst_action(session_id: str, payload: AnalystActionIn, db: Session = Depends(get_db)):
+    """Record a human analyst decision; quarantine is local sandbox-only."""
+    session = db.get(AttackerSession, session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    latest_event = db.scalar(select(SecurityEvent).where(SecurityEvent.session_id == session_id).order_by(SecurityEvent.timestamp.desc()))
+    recommendation = str((latest_event.details.get("agentic_decision", {}) if latest_event else {}).get("approved_action", "OBSERVE"))
+    decision = AnalystDecision(session_id=session_id, analyst=payload.analyst, action=payload.action, note=payload.note, recommendation=recommendation)
+    db.add(decision)
+    containment_action = None
+    already_contained = session.status == "CONTAINED"
+    if payload.action == "QUARANTINE" and session.status != "CONTAINED":
+        session.status = "CONTAINED"
+        containment_action = "Analyst-approved local sandbox quarantine; fake credentials revoked for this attacker session."
+        db.add(Incident(session_id=session.id, severity=severity(session.risk_score), status="CONTAINED", summary="Human analyst manually approved sandbox quarantine.", containment_action=containment_action))
+        record_session_feedback(db, session.id)
+    db.commit()
+    if containment_action:
+        message = containment_action
+    elif payload.action == "QUARANTINE" and already_contained:
+        message = "Session was already quarantined; fake credentials remain revoked for this defender-owned lab session."
+    else:
+        message = "Analyst decision recorded in the defender-owned lab audit trail."
+    return {"session_id": session.id, "session_status": session.status, "action": payload.action, "recommendation": recommendation, "containment_action": containment_action, "message": message}
+
+
+@app.get("/api/v1/sessions/{session_id}/analyst-decisions")
+def analyst_decisions(session_id: str, db: Session = Depends(get_db)):
+    decisions = list(db.scalars(select(AnalystDecision).where(AnalystDecision.session_id == session_id).order_by(AnalystDecision.created_at.desc())))
+    return [{"id": decision.id, "analyst": decision.analyst, "action": decision.action, "note": decision.note, "recommendation": decision.recommendation, "created_at": decision.created_at} for decision in decisions]
 
 
 @app.get("/api/v1/sessions/{session_id}/containment")
