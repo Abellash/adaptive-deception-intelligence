@@ -1,57 +1,65 @@
 # PikaTrap
 
-Adaptive deception. Intelligent defense. PikaTrap is a safe, local-first hackathon prototype for Team Pikachu. It uses intelligent honeytokens, adaptive deception, attacker behavior analysis, threat intelligence, and automated containment.
+> **Adaptive deception. Intelligent defense.**
 
-## Hackathon project
+PikaTrap is a working cyber-deception platform built by **Team Pikachu** for the Neurobots National Level Hackathon 2026.
 
-Built for the **Autonomous Deception Intelligence Platform Using Honeytokens & Active Defense** challenge.
+It creates a safe, defender-owned environment where fictional attackers interact with realistic decoys such as fake credentials, customer exports, source-code secrets, cloud-storage routes, and services. PikaTrap collects those interactions as telemetry, analyzes the observed behavior, maps it to MITRE ATT&CK, calculates risk per action, adaptively chooses the next deception response, and produces an incident report.
 
-### Team
+> **Safety first:** PikaTrap is a controlled simulation. It does not scan, access, modify, or attack any external or real-world system. All credentials, files, identities, and services used in the demo are fictional.
 
-- Abellash
-- Antony
+---
 
-## Working vertical slice
+## Team
 
-`deception/fake_source/payment-service/.env.production` is a deliberately fake, non-functional honeytoken. The demo canary reports access to the API, where PikaTrap persists the event, scores it, infers intent from the event sequence, maps ATT&CK, selects an allowed action, and broadcasts it to the dashboard over WebSocket.
+| Item | Details |
+|---|---|
+| Team name | Team Pikachu |
+| Members | Abellash, Antony |
+| Domain | Defensive Cybersecurity |
+| College | Sahrdaya College |
+| Project | PikaTrap — Adaptive Deception Intelligence Platform |
 
-No real credentials, cloud infrastructure, external scanning, or counter-hacking are included.
+---
 
-## Run with Docker
+## Problem statement
 
-```bash
-copy .env.example .env
-docker compose up --build
-```
+Security teams often discover credential theft, data collection, source-code discovery, or cloud reconnaissance only after an attacker reaches valuable assets.
 
-Open `http://localhost:5173`, then choose **Open NovaPay target lab**. API health is at `http://localhost:8000/health`.
+Traditional alerts can also be noisy: one event alone does not explain what an attacker is trying to achieve.
 
-For the richer safe demo, use the linked NovaPay lab. Choose Engineering (fake `.env.production` -> fake cloud console -> storage bucket -> fictional customer export), Finance (forecast/payroll decoys), or Source Control (fake deployment key -> local authentication decoy). Each local interaction sends a different standardized telemetry event to PikaTrap. This is defender-owned simulation only; it does not interact with external websites.
+PikaTrap addresses this problem by using safe decoys to observe attacker-like behavior early and convert the interaction sequence into understandable evidence:
 
-## Run backend locally
+- What was accessed?
+- What is the likely attacker intent?
+- Which MITRE ATT&CK technique matches the behavior?
+- How risky is this specific action?
+- Should the defender observe, deploy another decoy, or contain the session?
 
-```bash
-cd backend
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
+---
 
-The local backend defaults to `backend/data/pikatrap.db`. Trigger the safe canary with:
+## Proposed solution
 
-```bash
-python deception/scripts/trigger_env_canary.py
-```
+PikaTrap is a defender-owned adaptive deception platform.
 
-## Endpoints
+Instead of exposing real assets, it uses realistic fictional decoys inside the NovaPay target lab. When a user chooses simulated attacker actions, PikaTrap records telemetry and adapts its next decision based on the observed path.
 
-- `GET /health`
-- `POST /api/v1/telemetry` - standardized event ingestion
-- `POST /api/v1/demo/trigger` - safe first-honeytoken demo
-- `GET /api/v1/events`
-- `GET /api/v1/incidents`
-- `GET /api/v1/reports/{session_id}.html`
-- `WS /ws/events`
+### Core flow
 
-See [architecture](docs/architecture.md), [API notes](docs/api.md), and the [repeatable demo](docs/demo-scenario.md).
+```mermaid
+flowchart LR
+    A[Defender-owned NovaPay target lab] --> B[Honeytoken interaction]
+    B --> C[Telemetry collector]
+    C --> D[Behavior and intent analysis]
+    D --> E[Risk score + MITRE ATT&CK mapping]
+    E --> F[Adaptive Decoy Policy Engine]
+
+    F --> G[SWEEP: multiple safe decoys]
+    F --> H[SEEK: targeted safe decoy]
+    F --> I[CONTAIN: simulated quarantine]
+
+    G --> J[Live dashboard and deception graph]
+    H --> J
+    I --> J
+
+    J --> K[Session history and incident report]
