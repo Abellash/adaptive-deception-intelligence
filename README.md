@@ -51,6 +51,8 @@ A simulated attacker interacts with the NovaPay target lab. Each interaction cre
 
 The dashboard shows the live deception graph, telemetry feed, per-action risk, intent, MITRE ATT&CK mapping, policy decision, completed-session history, and downloadable report.
 
+PikaTrap also records controlled-lab deception outcomes and gives an analyst a final, visible decision point before a manual sandbox quarantine.
+
 ---
 
 ## Key Features
@@ -197,7 +199,31 @@ The downloadable incident report includes:
 - MITRE ATT&CK mapping
 - Deception graph
 - Adaptive policy decisions
+- Bounded agent recommendation and deterministic safety-gate result
+- Decoy feedback outcome: ignored, engaged, or engaged with progression
+- Analyst decision audit entries
 - Containment outcome
+
+### Human-in-the-loop SOC Controls
+
+The dashboard includes a safe analyst-control panel for an active NovaPay sandbox session:
+
+- **Approve** records acceptance of the current recommendation
+- **Reject** records that the analyst declined it
+- **Override** records an analyst alternative for later review
+- **Quarantine** immediately isolates only the fictional sandbox session and revokes its fictional credential access
+
+Every choice is stored in a session audit trail. This is a local demonstration of analyst oversight, not an enterprise authentication or RBAC system.
+
+### Deception Feedback and Effectiveness Analytics
+
+After a contained session, PikaTrap evaluates whether controlled-lab decoys were:
+
+- Ignored
+- Engaged
+- Engaged and followed by further attacker progression
+
+The feedback loop uses these outcomes to prefer stronger previously effective safe decoys in later placement decisions. The dashboard shows decoys evaluated, engagement rate, ignored outcomes, progressed outcomes, and completed sessions.
 
 ---
 
@@ -209,17 +235,19 @@ flowchart LR
     B --> C[Telemetry collector]
     C --> D[Behavior and intent analysis]
     D --> E[Risk score and MITRE ATT&CK mapping]
-    E --> F[Adaptive Decoy Policy Engine]
+    E --> F[Bounded agent recommendation]
+    F --> G[Adaptive Decoy Policy Engine safety gate]
 
-    F --> G[SWEEP: multiple safe decoys]
-    F --> H[SEEK: targeted safe decoy]
-    F --> I[CONTAIN: simulated session quarantine]
+    G --> H[SWEEP: multiple safe decoys]
+    G --> I[SEEK: targeted safe decoy]
+    G --> J[CONTAIN: simulated session quarantine]
 
-    G --> J[Live dashboard and deception graph]
-    H --> J
-    I --> J
+    H --> K[Live dashboard and deception graph]
+    I --> K
+    J --> K
 
-    J --> K[Session history and downloadable incident report]
+    K --> L[Analyst controls and feedback loop]
+    L --> M[Session history and downloadable incident report]
 ```
 
 ### System Components
@@ -233,6 +261,10 @@ flowchart LR
 | Redis | Supports service communication and real-time behavior |
 | React dashboard | Displays telemetry, maps, risk, policy, and reports |
 | Adaptive Decoy Policy Engine | Selects SWEEP, SEEK, OBSERVE, or CONTAIN |
+| Bounded agentic orchestrator | Makes an explainable recommendation from a restricted safe action set |
+| Deterministic safety gate | Applies the final safe policy decision |
+| Analyst controls | Records approve, reject, override, and sandbox-quarantine decisions |
+| Feedback service | Records decoy engagement outcomes and informs future safe placement |
 | Docker Compose | Runs the local multi-service application |
 | Railway | Hosts deployed demo services |
 
@@ -325,6 +357,10 @@ docker compose down
 | `POST /api/v1/demo/trigger` | Trigger a safe demo honeytoken event |
 | `GET /api/v1/events` | Retrieve collected telemetry |
 | `GET /api/v1/incidents` | Retrieve completed session history |
+| `POST /api/v1/sessions/{session_id}/analyst-action` | Record an analyst approve, reject, override, or local quarantine decision |
+| `GET /api/v1/sessions/{session_id}/analyst-decisions` | Retrieve analyst audit entries for a session |
+| `GET /api/v1/sessions/{session_id}/containment` | Retrieve current sandbox containment status |
+| `GET /api/v1/deception-effectiveness` | Retrieve controlled-lab decoy engagement metrics |
 | `GET /api/v1/reports/{session_id}.html` | View or generate an incident report |
 | `WS /ws/events` | Receive live event updates |
 
@@ -408,6 +444,10 @@ The following capabilities are complete and demo-ready:
 - [x] Downloadable incident reports
 - [x] Bounded agentic recommendation with deterministic safety gate
 - [x] 24-scenario safe synthetic evaluation harness
+- [x] Decoy feedback loop for ignored, engaged, and progressed outcomes
+- [x] Deception effectiveness analytics dashboard
+- [x] Human-in-the-loop analyst controls and session audit trail
+- [x] Analyst-approved local sandbox quarantine
 
 ---
 
@@ -429,6 +469,14 @@ python evaluation/run_evaluation.py
 
 Reports are written to `backend/evaluation/results/`. These are synthetic regression metrics, not claims of real-world attack-detection accuracy.
 
+## Deception Feedback Loop
+
+When a session is contained, PikaTrap writes an explainable outcome for each relevant controlled-lab decoy: `IGNORED`, `ENGAGED`, or `ENGAGED_AND_PROGRESSED`. Placement uses this historical lab-only feedback to rank later safe decoy candidates. It is a lightweight evidence loop, not autonomous model training.
+
+## Human-in-the-loop SOC Workflow
+
+The bounded agent and deterministic policy can recommend a safe action, but an analyst can also record **Approve**, **Reject**, **Override**, or **Quarantine** from the dashboard. Quarantine is limited to the defender-owned NovaPay session: it changes the local session status to `CONTAINED`, creates an incident record, revokes fictional credentials, and preserves feedback for reporting.
+
 ---
 
 ## Future Scope / Final Round Roadmap
@@ -436,13 +484,14 @@ Reports are written to `backend/evaluation/results/`. These are synthetic regres
 The following enhancements are planned for authorized real-world enterprise use:
 
 - [ ] Integrate authorized endpoint, cloud, network, or SIEM telemetry
-- [ ] Add user authentication, SOC analyst roles, and audit logging
+- [ ] Add user authentication, formal RBAC, and tamper-evident enterprise audit logging
 - [ ] Deploy decoys into approved cloud or object-storage test environments
 - [ ] Add alert integrations: email, Slack, Microsoft Teams, Jira, or ServiceNow
 - [ ] Evaluate and calibrate risk and intent scoring with approved red-team datasets
 - [ ] Add more authorized cloud, API, storage, and service decoys
 - [ ] Pilot the platform with a security team
 - [ ] Measure alert quality, usability, false positives, and detection value
+- [ ] Add attack replay / forensic mode for completed deception graphs
 
 ---
 
