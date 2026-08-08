@@ -15,6 +15,7 @@ from .services.honeytokens import TOKEN_REFERENCE, write_first_honeytoken
 from .services.intent import behavior_label, infer_intent, infer_intent_probabilities, next_path_probabilities
 from .services.mapping import map_event
 from .services.orchestrator import decide
+from .services.placement import place_safe_decoys
 from .services.risk import risk_delta, severity
 from .websocket import ConnectionManager
 
@@ -101,7 +102,8 @@ async def ingest_telemetry(payload: TelemetryEventIn, db: Session = Depends(get_
         session.status = "CONTAINED"
         db.add(Incident(session_id=session.id, severity=severity(session.risk_score), status="CONTAINED", summary=f"Policy threshold met. {reason}", containment_action=containment_action))
         reason += " Policy executor completed local sandbox containment."
-    event = SecurityEvent(session_id=session.id, asset_id=asset.id if asset else None, event_type=payload.action, timestamp=payload.timestamp or datetime.now(timezone.utc), details={**payload.details, "source": payload.source, "evidence": evidence, "decision_reason": reason, "behavior": behavior, "intent_probabilities": probabilities, "next_paths": next_paths, "threat_percent": session.risk_score, "session_status": session.status, "containment_action": containment_action, "fake_credential_revoked": bool(containment_action)}, risk_delta=delta, mitre_tactic=tactic, mitre_technique=technique)
+    placement = place_safe_decoys(db, session.id, payload.action, intent, session.risk_score)
+    event = SecurityEvent(session_id=session.id, asset_id=asset.id if asset else None, event_type=payload.action, timestamp=payload.timestamp or datetime.now(timezone.utc), details={**payload.details, "source": payload.source, "evidence": evidence, "decision_reason": reason, "behavior": behavior, "intent_probabilities": probabilities, "next_paths": next_paths, "threat_percent": session.risk_score, "session_status": session.status, "containment_action": containment_action, "fake_credential_revoked": bool(containment_action), "placement": placement}, risk_delta=delta, mitre_tactic=tactic, mitre_technique=technique)
     db.add(event)
     db.commit()
     db.refresh(event)
