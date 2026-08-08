@@ -4,6 +4,7 @@ import "./style.css";
 
 type Event = { event_id: string; timestamp: string; session_id: string; action: string; risk_delta: number; risk_score: number; severity: string; intent: string; intent_confidence: number; intent_probabilities: Record<string, number>; behavior: string; threat_percent: number; next_paths: { path: string; probability: number }[]; session_status: string; containment_action: string | null; mitre_technique: string; orchestrator_action: string; details: Record<string, unknown> };
 type Incident = { id: string; session_id: string; severity: string; status: string; summary: string; containment_action: string; created_at: string };
+type Effectiveness = { decoys_evaluated: number; engaged: number; ignored: number; progressed: number; engagement_rate_percent: number; sessions_evaluated: number };
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const LAB_URL = import.meta.env.VITE_LAB_URL || "http://localhost:8081";
 const title = (value: string) => value.replaceAll("_", " ");
@@ -46,6 +47,18 @@ function HoneytokenFactory() {
     } catch { setMessage("API unavailable. Ensure the backend is running."); }
   };
   return <section className="factory"><div className="section-title"><div><p className="eyebrow">HONEYTOKEN FACTORY</p><h2>Create safe decoys</h2></div><span>NovaPay lab inventory</span></div><div className="token-options">{tokenChoices.map(([name, type, risk]) => <button key={type} onClick={() => createToken(name, type, risk)}><strong>{name}</strong><small>{type.replace("_", " ")} / risk weight {risk}</small></button>)}</div>{message && <p className="factory-message">{message}</p>}</section>;
+}
+
+function DeceptionEffectiveness() {
+  const [metrics, setMetrics] = useState<Effectiveness | null>(null);
+  useEffect(() => {
+    const load = () => fetch(`${API}/api/v1/deception-effectiveness`).then(response => response.json()).then(setMetrics).catch(() => {});
+    load();
+    const timer = window.setInterval(load, 3000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const values = metrics || { decoys_evaluated: 0, engaged: 0, ignored: 0, progressed: 0, engagement_rate_percent: 0, sessions_evaluated: 0 };
+  return <section className="effectiveness"><div className="section-title"><div><p className="eyebrow">ADAPTIVE FEEDBACK LOOP</p><h2>Deception effectiveness</h2></div><span>{values.sessions_evaluated} completed session{values.sessions_evaluated === 1 ? "" : "s"}</span></div><div className="effectiveness-metrics"><div><small>DECOYS EVALUATED</small><strong>{values.decoys_evaluated}</strong></div><div><small>ENGAGED</small><strong>{values.engaged}</strong></div><div><small>ENGAGEMENT RATE</small><strong>{values.engagement_rate_percent}%</strong></div><div><small>IGNORED</small><strong>{values.ignored}</strong></div><div><small>PROGRESSED</small><strong>{values.progressed}</strong></div></div><p className="graph-caption">After containment, PikaTrap records whether controlled-lab decoys were engaged, ignored, or followed by further progression. Future SEEK choices prefer decoys with stronger prior engagement outcomes.</p></section>;
 }
 
 function App() {
@@ -106,6 +119,7 @@ function App() {
     <HoneytokenFactory />
     <section className="grid"><article><p className="eyebrow">ADAPTIVE POLICY</p><h3>{latest ? title(latest.orchestrator_action) : "OBSERVE"}</h3><p className="muted">PikaTrap persists explainable behavior memory from prior lab sessions. It is not a trained LLM and it never executes external actions.</p></article><article><p className="eyebrow">CONTAINMENT</p><h3>{latest?.session_status === "CONTAINED" ? "SESSION ISOLATED" : reportReady ? "REPORT READY" : "POLICY-GATED"}</h3><p className="muted">At threshold, the local policy executor quarantines the simulated session and revokes its fake-credential access.</p></article></section>
     <AttackGraph events={events} activeSession={activeSession} />
+    <DeceptionEffectiveness />
     <section className="history"><div className="section-title"><div><p className="eyebrow">COMPLETED ATTACK HISTORY</p><h2>Contained incidents</h2></div><a className="new-session" href="/">New attacker session</a></div>{incidents.length ? incidents.map(incident => <article className="history-row" key={incident.id}><div><h3>{incident.severity} / {incident.status}</h3><p>{incident.summary}</p></div><div className="history-actions"><button onClick={() => downloadReport(incident.session_id)}>Download report</button></div></article>) : <div className="empty">Contained attack cycles will appear here.</div>}</section>
     <section className="events"><div className="section-title"><div><p className="eyebrow">EVENT TIMELINE</p><h2>Telemetry feed</h2></div><span>{activeSession ? events.filter(event => event.session_id === activeSession).length : 0} event{events.filter(event => event.session_id === activeSession).length === 1 ? "" : "s"}</span></div>{activeSession ? events.filter(event => event.session_id === activeSession).map(event => <article className="event" key={event.event_id}><div className="dot"></div><div><h3>{title(event.action)}</h3><p>{String(event.details.path || event.details.object || "Controlled canary interaction")}</p></div><div><small>MITRE ATT&CK</small><p>{event.mitre_technique || "Pending mapping"}</p></div><div className="intent"><small>INTENT</small><p>{event.intent} / {Math.round(event.intent_confidence * 100)}%</p></div><div className="impact"><small>ATTACK IMPACT</small><p>+{event.risk_delta}</p></div><b className={event.severity.toLowerCase()}>{event.severity}</b></article>) : <div className="empty">No interactions yet. Choose Start new demo, then open the NovaPay lab.</div>}</section>
   </main>;

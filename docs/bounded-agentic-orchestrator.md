@@ -14,3 +14,7 @@ The recommendation is not an external-action executor. The deterministic policy 
 For every event, PikaTrap stores the recommendation, its evidence summary, the safety-gated action, gate status, and gate reason inside the event details. The live dashboard and contained-session report expose this explanation.
 
 This design makes the system agentic in its recommendation workflow while retaining deterministic, auditable, bounded execution.
+
+## Feedback loop
+
+When a sandbox session is contained, PikaTrap records a per-decoy outcome: `IGNORED`, `ENGAGED`, or `ENGAGED_AND_PROGRESSED`. The outcome is derived from controlled-lab event semantics and later event count, not external attacker activity or real elapsed dwell time. The placement service uses these outcomes as an explainable preference score when selecting among equivalent safe SEEK candidates and ordering SWEEP candidates.

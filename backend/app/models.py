@@ -75,3 +75,19 @@ class BehaviorMemory(Base):
     action: Mapped[str] = mapped_column(String(80), primary_key=True)
     observations: Mapped[int] = mapped_column(Integer, default=0)
     last_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class DecoyFeedback(Base):
+    """Explainable outcome record for a decoy used in a completed sandbox session."""
+    __tablename__ = "decoy_feedback"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    session_id: Mapped[str] = mapped_column(ForeignKey("attacker_sessions.id"))
+    asset_id: Mapped[str] = mapped_column(ForeignKey("assets.id"))
+    decoy_label: Mapped[str] = mapped_column(String(255))
+    token_type: Mapped[str] = mapped_column(String(80))
+    placement_mode: Mapped[str] = mapped_column(String(40))
+    outcome: Mapped[str] = mapped_column(String(80))
+    interaction_count: Mapped[int] = mapped_column(Integer, default=0)
+    first_interaction_step: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    progression_event_count: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
