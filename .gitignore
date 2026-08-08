@@ -7,3 +7,5 @@ node_modules/
 dist/
 data/
 compose-error.txt
+.evaluation-results/
+backend/evaluation/results/

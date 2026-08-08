@@ -406,6 +406,28 @@ The following capabilities are complete and demo-ready:
 - [x] Fictional credential revocation
 - [x] Completed-session history
 - [x] Downloadable incident reports
+- [x] Bounded agentic recommendation with deterministic safety gate
+- [x] 24-scenario safe synthetic evaluation harness
+
+---
+
+## Bounded Agentic Orchestration
+
+The bounded agentic orchestrator reads the complete simulated session history and recommends one action from `OBSERVE`, `SWEEP`, `SEEK`, `DEPLOY_DECOY`, `ESCALATE`, or `RECOMMEND_CONTAINMENT`.
+
+The deterministic policy remains the final safety gate: it can block containment, normalize a recommendation to a safe metadata-only placement, or override it when the containment threshold is met. The dashboard and incident report display both the recommendation and the safety-gated action. See [bounded agentic orchestrator](docs/bounded-agentic-orchestrator.md).
+
+## Safe Synthetic Evaluation
+
+PikaTrap includes 24 deterministic NovaPay sandbox scenarios to regression-test the current intent, MITRE mapping, placement, and containment logic. The harness reports agreement with reviewed scenario labels, containment false positives, event-count detection latency, decoy engagement, and safe-asset reachability.
+
+Run it from the `backend` directory:
+
+```powershell
+python evaluation/run_evaluation.py
+```
+
+Reports are written to `backend/evaluation/results/`. These are synthetic regression metrics, not claims of real-world attack-detection accuracy.
 
 ---
 
